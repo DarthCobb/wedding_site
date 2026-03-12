@@ -59,6 +59,19 @@ const requireAdmin = async (req, res, next) => {
 };
 
 // --- Site Data Routes ---
+app.get('/api/sitedata/public', async (req, res) => {
+    try {
+        const data = await db.collection('sitedata').findOne({ _id: 'siteconfig' });
+        if (data) {
+            delete data.adminPassword;
+            delete data.vendorTimeline;
+        }
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.get('/api/sitedata', async (req, res) => {
     try {
         const data = await db.collection('sitedata').findOne({ _id: 'siteconfig' });
