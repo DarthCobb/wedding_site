@@ -364,24 +364,33 @@ app.post('/api/send-invites', async (req, res) => {
             const htmlContent = `
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><style>
-  body { font-family: Georgia, serif; background: #fdf8f5; margin: 0; padding: 0; }
-  .wrapper { max-width: 560px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-  .header { background: #1e293b; padding: 40px 40px 32px; text-align: center; }
-  .header h1 { color: #fff; font-size: 28px; margin: 0 0 8px; letter-spacing: 1px; }
-  .header p { color: #94a3b8; font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: 2px; }
-  .body { padding: 40px; color: #334155; line-height: 1.8; }
-  .body h2 { font-size: 22px; color: #1e293b; margin-top: 0; }
-  .detail { background: #f8fafc; border-left: 4px solid #e11d48; padding: 16px 20px; border-radius: 8px; margin: 24px 0; }
-  .detail p { margin: 4px 0; font-size: 15px; }
-  .detail strong { color: #1e293b; }
-  .btn { display: block; width: fit-content; margin: 32px auto; background: #1e293b; color: #fff !important; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-family: Georgia, serif; letter-spacing: 0.5px; }
-  .footer { text-align: center; padding: 24px; color: #94a3b8; font-size: 12px; border-top: 1px solid #f1f5f9; }
-</style></head>
-<body>
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+  body { font-family: 'Inter', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
+  .wrapper { max-width: 560px; margin: 40px auto; background: #0f172a; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 1px solid #1e293b; }
+  .header { padding: 48px 40px 24px; text-align: center; }
+  .header h1 { font-family: 'Playfair Display', Georgia, serif; color: #ffffff; font-size: 42px; margin: 0 0 12px; font-weight: 400; }
+  .header p { color: #94a3b8; font-size: 14px; margin: 0; text-transform: uppercase; letter-spacing: 3px; font-weight: 600; }
+  .body { padding: 0 40px 40px; color: #cbd5e1; line-height: 1.8; text-align: center; }
+  .body h2 { font-family: 'Inter', Arial, sans-serif; font-size: 20px; color: #ffffff; margin-top: 0; font-weight: 500; }
+  .detail { background: #1e293b; padding: 24px; border-radius: 16px; margin: 32px 0; border: 1px solid #334155; }
+  .detail p { margin: 8px 0; font-size: 15px; color: #e2e8f0; }
+  .detail strong { color: #ffffff; font-weight: 600; }
+  .btn { display: inline-block; margin: 8px auto 32px; background: #ffffff; color: #0f172a !important; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.3s; }
+  .footer { text-align: center; padding: 24px; color: #64748b; font-size: 13px; border-top: 1px solid #1e293b; background: #0b1120; }
+</style>
+</head>
+<body style="background-color: #f8fafc;">
+<div style="padding: 20px;">
 <div class="wrapper">
   <div class="header">
-    <h1>${coupleName}</h1>
+    <div style="text-align: center; margin-bottom: 12px;">
+      <img src="${rsvpBaseUrl}/Accent%204.png" alt="" style="height: 40px; vertical-align: middle; margin-right: 12px; object-fit: contain;" />
+      <h1 style="display: inline-block; vertical-align: middle; margin: 0;">${coupleName}</h1>
+      <img src="${rsvpBaseUrl}/Accent%204.png" alt="" style="height: 40px; vertical-align: middle; margin-left: 12px; object-fit: contain; transform: scaleX(-1);" />
+    </div>
     <p>Wedding Invitation</p>
   </div>
   <div class="body">
@@ -391,15 +400,17 @@ app.post('/api/send-invites', async (req, res) => {
       <p><strong>📅 Date:</strong> ${eventDate}</p>
       <p><strong>📍 Venue:</strong> ${venueName}</p>
     </div>
-    <p>Please let us know if you'll be joining us by clicking the button below.</p>
+    <p style="margin-bottom: 24px;">Please let us know if you'll be joining us by clicking the button below.</p>
     <a class="btn" href="${rsvpLink}">RSVP Now</a>
-    <p style="font-size:13px;color:#94a3b8;text-align:center;">Or copy this link: <a href="${rsvpLink}" style="color:#e11d48;">${rsvpLink}</a></p>
+    <p style="font-size:13px;color:#64748b;">Or copy this link:<br> <a href="${rsvpLink}" style="color:#94a3b8; word-break: break-all;">${rsvpLink}</a></p>
   </div>
   <div class="footer">
-    <p>With love, ${coupleName} 💍</p>
+    <p style="margin: 0;">With love, ${coupleName} 💍</p>
   </div>
 </div>
-</body></html>`;
+</div>
+</body>
+</html>`;
 
             try {
                 const message = new Brevo.SendSmtpEmail();
