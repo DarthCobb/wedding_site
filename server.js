@@ -59,15 +59,37 @@ const requireAdmin = async (req, res, next) => {
 };
 
 // --- Site Data Routes ---
-app.get('/api/sitedata/public', async (req, res) => {
+app.get('/api/sitedata/rsvp', async (req, res) => {
     try {
         const data = await db.collection('sitedata').findOne({ _id: 'siteconfig' });
         if (data) {
-            delete data.adminPassword;
-            delete data.vendorTimeline;
-            delete data.eventCode;
+            res.json({
+                person1: data.person1,
+                person2: data.person2
+            });
+        } else {
+            res.json(null);
         }
-        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/sitedata/guest', async (req, res) => {
+    try {
+        const data = await db.collection('sitedata').findOne({ _id: 'siteconfig' });
+        if (data) {
+            res.json({
+                person1: data.person1,
+                person2: data.person2,
+                aboutUs: data.aboutUs,
+                location: data.location,
+                eventDate: data.eventDate,
+                registryUrl: data.registryUrl
+            });
+        } else {
+            res.json(null);
+        }
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
