@@ -12,10 +12,18 @@ app.use(express.json());
 
 // --- Request Logger ---
 app.use((req, res, next) => {
-    const hasBody = req.method !== 'GET' && req.method !== 'DELETE';
-    console.log(`\n[REQUEST] ${req.method} ${req.path}`);
-    if (hasBody && req.body && Object.keys(req.body).length > 0) {
-        console.log('[PAYLOAD]', JSON.stringify(req.body, null, 2));
+    if (process.env.VERBOSE === 'true') {
+        const hasBody = req.method !== 'GET' && req.method !== 'DELETE';
+        console.log(`\n[REQUEST] ${req.method} ${req.path}`);
+        if (hasBody && req.body && Object.keys(req.body).length > 0) {
+            console.log('[PAYLOAD]', JSON.stringify(req.body, null, 2));
+        }
+        
+        const start = Date.now();
+        res.on('finish', () => {
+            const duration = Date.now() - start;
+            console.log(`[RESPONSE] ${req.method} ${req.path} - Status: ${res.statusCode} (${duration}ms)`);
+        });
     }
     next();
 });
@@ -123,16 +131,16 @@ app.put('/api/sitedata', requireAdmin, async (req, res) => {
     try {
         const update = req.body;
         delete update._id; // prevent _id mutation
-        console.log('[API] Updating sitedata');
+        if (process.env.VERBOSE === 'true') console.log('[API] Updating sitedata');
         const result = await db.collection('sitedata').findOneAndUpdate(
             { _id: 'siteconfig' },
             { $set: update },
             { returnDocument: 'after', upsert: true }
         );
-        console.log('[RESPONSE] sitedata updated OK');
+        if (process.env.VERBOSE === 'true') console.log('[RESPONSE] sitedata updated OK');
         res.json(result);
     } catch (error) {
-        console.error('[ERROR] Failed to update sitedata:', error.message);
+        if (process.env.VERBOSE === 'true') console.error('[ERROR] Failed to update sitedata:', error.message);
         res.status(400).json({ error: error.message });
     }
 });
@@ -150,12 +158,12 @@ app.get('/api/guests', requireAdmin, async (req, res) => {
 app.post('/api/guests', async (req, res) => {
     try {
         const guest = req.body;
-        console.log('[API] Inserting guest into MongoDB:', guest.name);
+        if (process.env.VERBOSE === 'true') console.log('[API] Inserting guest into MongoDB:', guest.name);
         await db.collection('guests').insertOne(guest);
-        console.log('[RESPONSE] Guest saved OK:', guest.id);
+        if (process.env.VERBOSE === 'true') console.log('[RESPONSE] Guest saved OK:', guest.id);
         res.status(201).json(guest);
     } catch (error) {
-        console.error('[ERROR] Failed to insert guest:', error.message);
+        if (process.env.VERBOSE === 'true') console.error('[ERROR] Failed to insert guest:', error.message);
         res.status(400).json({ error: error.message });
     }
 });
@@ -213,7 +221,7 @@ app.post('/api/guests/lookup', async (req, res) => {
             res.status(404).json({ error: 'No invitation found with that email' });
         }
     } catch (error) {
-        console.error('[ERROR] Failed during guest lookup:', error);
+        if (process.env.VERBOSE === 'true') console.error('[ERROR] Failed during guest lookup:', error);
         res.status(500).json({ error: 'Internal server error during lookup' });
     }
 });
@@ -231,12 +239,12 @@ app.get('/api/vendors', requireAdmin, async (req, res) => {
 app.post('/api/vendors', async (req, res) => {
     try {
         const vendor = req.body;
-        console.log('[API] Inserting vendor into MongoDB:', vendor.name);
+        if (process.env.VERBOSE === 'true') console.log('[API] Inserting vendor into MongoDB:', vendor.name);
         await db.collection('vendors').insertOne(vendor);
-        console.log('[RESPONSE] Vendor saved OK:', vendor.id);
+        if (process.env.VERBOSE === 'true') console.log('[RESPONSE] Vendor saved OK:', vendor.id);
         res.status(201).json(vendor);
     } catch (error) {
-        console.error('[ERROR] Failed to insert vendor:', error.message);
+        if (process.env.VERBOSE === 'true') console.error('[ERROR] Failed to insert vendor:', error.message);
         res.status(400).json({ error: error.message });
     }
 });
@@ -283,7 +291,7 @@ app.get('/api/carousel', (req, res) => {
         const imagePaths = images.map(img => `/carousel/${img}`);
         res.json(imagePaths);
     } catch (error) {
-        console.error('[ERROR] Failed to read carousel directory:', error.message);
+        if (process.env.VERBOSE === 'true') console.error('[ERROR] Failed to read carousel directory:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -386,7 +394,7 @@ app.post('/api/send-invites', async (req, res) => {
             return false;
         }).length;
 
-        console.log(`[INVITES] Sending to ${eligible.length} guests, skipping ${skipped}`);
+        if (process.env.VERBOSE === 'true') console.log(`[INVITES] Sending to ${eligible.length} guests, skipping ${skipped}`);
 
         if (eligible.length === 0) {
             return res.json({ sent: 0, skipped, errors: [], message: 'No eligible guests to invite.' });
@@ -429,7 +437,7 @@ app.post('/api/send-invites', async (req, res) => {
                 };
 
                 await emailAPI.sendTransacEmail(message);
-                console.log(`[INVITES] Sent to ${guest.name} <${guest.contact}>`);
+                if (process.env.VERBOSE === 'true') console.log(`[INVITES] Sent to ${guest.name} <${guest.contact}>`);
 
                 // Mark as invited in MongoDB
                 await db.collection('guests').updateOne(
@@ -438,16 +446,16 @@ app.post('/api/send-invites', async (req, res) => {
                 );
                 sent.push(guest.name);
             } catch (emailErr) {
-                console.error(`[INVITES] Failed for ${guest.name}:`, emailErr.body || emailErr.message);
+                if (process.env.VERBOSE === 'true') console.error(`[INVITES] Failed for ${guest.name}:`, emailErr.body || emailErr.message);
                 errors.push({ name: guest.name, error: emailErr.body?.message || emailErr.message });
             }
         }
 
-        console.log(`[INVITES] Done. Sent: ${sent.length}, Errors: ${errors.length}`);
+        if (process.env.VERBOSE === 'true') console.log(`[INVITES] Done. Sent: ${sent.length}, Errors: ${errors.length}`);
         res.json({ sent: sent.length, skipped, errors, sentNames: sent });
 
     } catch (error) {
-        console.error('[INVITES] Unexpected error:', error.message);
+        if (process.env.VERBOSE === 'true') console.error('[INVITES] Unexpected error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
