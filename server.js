@@ -12,9 +12,11 @@ app.use(express.json());
 
 // --- Request Logger ---
 app.use((req, res, next) => {
+    // Log every API call by default (VERBOSE=false)
+    console.log(`[API CALL] ${req.method} ${req.path}`);
+
     if (process.env.VERBOSE === 'true') {
         const hasBody = req.method !== 'GET' && req.method !== 'DELETE';
-        console.log(`\n[REQUEST] ${req.method} ${req.path}`);
         if (hasBody && req.body && Object.keys(req.body).length > 0) {
             console.log('[PAYLOAD]', JSON.stringify(req.body, null, 2));
         }
@@ -62,6 +64,7 @@ const requireAdmin = async (req, res, next) => {
 
         next();
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: 'Authentication failed' });
     }
 };
@@ -77,6 +80,7 @@ app.post('/api/auth/verify', async (req, res) => {
             res.status(401).json({ error: 'Invalid password' });
         }
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: 'Authentication failed' });
     }
 });
@@ -94,6 +98,7 @@ app.get('/api/sitedata/rsvp', async (req, res) => {
             res.json(null);
         }
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -114,6 +119,7 @@ app.get('/api/sitedata/guest', async (req, res) => {
             res.json(null);
         }
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -123,6 +129,7 @@ app.get('/api/sitedata', requireAdmin, async (req, res) => {
         const data = await db.collection('sitedata').findOne({ _id: 'siteconfig' });
         res.json(data);
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -140,7 +147,7 @@ app.put('/api/sitedata', requireAdmin, async (req, res) => {
         if (process.env.VERBOSE === 'true') console.log('[RESPONSE] sitedata updated OK');
         res.json(result);
     } catch (error) {
-        if (process.env.VERBOSE === 'true') console.error('[ERROR] Failed to update sitedata:', error.message);
+        console.error('[ERROR] Failed to update sitedata:', '\n', error.stack || error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -151,6 +158,7 @@ app.get('/api/guests', requireAdmin, async (req, res) => {
         const guests = await db.collection('guests').find().toArray();
         res.json(guests);
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -166,7 +174,7 @@ app.post('/api/guests', async (req, res) => {
         if (process.env.VERBOSE === 'true') console.log('[RESPONSE] Guest saved OK:', guest.id);
         res.status(201).json(guest);
     } catch (error) {
-        if (process.env.VERBOSE === 'true') console.error('[ERROR] Failed to insert guest:', error.message);
+        console.error('[ERROR] Failed to insert guest:', '\n', error.stack || error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -181,6 +189,7 @@ app.put('/api/guests/:id', async (req, res) => {
         );
         res.json(result);
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -190,6 +199,7 @@ app.delete('/api/guests/:id', async (req, res) => {
         await db.collection('guests').deleteOne({ id: req.params.id });
         res.json({ message: 'Guest deleted' });
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -226,7 +236,7 @@ app.post('/api/guests/lookup', async (req, res) => {
             res.status(404).json({ error: 'No invitation found with that email' });
         }
     } catch (error) {
-        if (process.env.VERBOSE === 'true') console.error('[ERROR] Failed during guest lookup:', error);
+        console.error('[ERROR] Failed during guest lookup:', '\n', error.stack || error);
         res.status(500).json({ error: 'Internal server error during lookup' });
     }
 });
@@ -237,6 +247,7 @@ app.get('/api/vendors', requireAdmin, async (req, res) => {
         const vendors = await db.collection('vendors').find().toArray();
         res.json(vendors);
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -249,7 +260,7 @@ app.post('/api/vendors', async (req, res) => {
         if (process.env.VERBOSE === 'true') console.log('[RESPONSE] Vendor saved OK:', vendor.id);
         res.status(201).json(vendor);
     } catch (error) {
-        if (process.env.VERBOSE === 'true') console.error('[ERROR] Failed to insert vendor:', error.message);
+        console.error('[ERROR] Failed to insert vendor:', '\n', error.stack || error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -264,6 +275,7 @@ app.put('/api/vendors/:id', async (req, res) => {
         );
         res.json(result);
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -273,6 +285,7 @@ app.delete('/api/vendors/:id', async (req, res) => {
         await db.collection('vendors').deleteOne({ id: req.params.id });
         res.json({ message: 'Vendor deleted' });
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -296,7 +309,7 @@ app.get('/api/carousel', (req, res) => {
         const imagePaths = images.map(img => `/carousel/${img}`);
         res.json(imagePaths);
     } catch (error) {
-        if (process.env.VERBOSE === 'true') console.error('[ERROR] Failed to read carousel directory:', error.message);
+        console.error('[ERROR] Failed to read carousel directory:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -307,6 +320,7 @@ app.get('/api/tables', requireAdmin, async (req, res) => {
         const tables = await db.collection('tables').find().toArray();
         res.json(tables);
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -322,6 +336,7 @@ app.post('/api/tables', async (req, res) => {
             res.status(201).json(table);
         }
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -335,6 +350,7 @@ app.put('/api/tables/sync', async (req, res) => {
         }
         res.json(newTables);
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -349,6 +365,7 @@ app.put('/api/tables/:id', async (req, res) => {
         );
         res.json(result);
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(400).json({ error: error.message });
     }
 });
@@ -358,6 +375,7 @@ app.delete('/api/tables/:id', async (req, res) => {
         await db.collection('tables').deleteOne({ id: req.params.id });
         res.json({ message: 'Table deleted' });
     } catch (error) {
+        console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -461,7 +479,7 @@ app.post('/api/send-invites', async (req, res) => {
         res.json({ sent: sent.length, skipped, errors, sentNames: sent });
 
     } catch (error) {
-        if (process.env.VERBOSE === 'true') console.error('[INVITES] Unexpected error:', error.message);
+        console.error('[INVITES] Unexpected error:', '\n', error.stack || error);
         res.status(500).json({ error: error.message });
     }
 });
