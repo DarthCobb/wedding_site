@@ -65,6 +65,7 @@ app.get('/api/sitedata/public', async (req, res) => {
         if (data) {
             delete data.adminPassword;
             delete data.vendorTimeline;
+            delete data.eventCode;
         }
         res.json(data);
     } catch (error) {
