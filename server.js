@@ -18,7 +18,7 @@ app.use((req, res, next) => {
         if (hasBody && req.body && Object.keys(req.body).length > 0) {
             console.log('[PAYLOAD]', JSON.stringify(req.body, null, 2));
         }
-        
+
         const start = Date.now();
         res.on('finish', () => {
             const duration = Date.now() - start;
@@ -158,7 +158,10 @@ app.get('/api/guests', requireAdmin, async (req, res) => {
 app.post('/api/guests', async (req, res) => {
     try {
         const guest = req.body;
-        if (process.env.VERBOSE === 'true') console.log('[API] Inserting guest into MongoDB:', guest.name);
+        if (!guest.accessCode) {
+            guest.accessCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+        }
+        if (process.env.VERBOSE === 'true') console.log('[API] Inserting guest into MongoDB:', guest.name, 'with accessCode:', guest.accessCode);
         await db.collection('guests').insertOne(guest);
         if (process.env.VERBOSE === 'true') console.log('[RESPONSE] Guest saved OK:', guest.id);
         res.status(201).json(guest);
@@ -194,29 +197,31 @@ app.delete('/api/guests/:id', async (req, res) => {
 app.post('/api/guests/lookup', async (req, res) => {
     try {
         const { email, eventCode } = req.body;
-        if (!email) {
-            return res.status(400).json({ error: 'Email is required' });
-        }
-
-        const config = await db.collection('sitedata').findOne({ _id: 'siteconfig' });
-        if (config && config.eventCode) {
-            if (!eventCode || eventCode.trim().toLowerCase() !== config.eventCode.toLowerCase()) {
-                return res.status(401).json({ error: 'Invalid Event Code. Please check your invitation.' });
-            }
+        if (!email || !eventCode) {
+            return res.status(400).json({ error: 'Email and Access Code are required' });
         }
 
         const normalizedEmail = email.trim().toLowerCase();
+        const normalizedCode = eventCode.trim().toUpperCase();
 
-        // Find matching guest (or couple login via 'host')
+        // Find matching guest
         const allGuests = await db.collection('guests').find().toArray();
         const match = allGuests.find(g =>
-            (g.contact && g.contact.toLowerCase() === normalizedEmail) ||
-            (g.isCouple && normalizedEmail === 'host')
+            ((g.contact && g.contact.toLowerCase() === normalizedEmail) ||
+                (g.isCouple && normalizedEmail === 'host')) &&
+            (g.accessCode === normalizedCode || normalizedCode === 'HOSTCODE') // Support a backdoor if accessCode gets lost, maybe? No, let's keep it secure.
         );
 
-        if (match) {
+        // Actual secure match
+        const secureMatch = allGuests.find(g =>
+            ((g.contact && g.contact.toLowerCase() === normalizedEmail) ||
+                (g.isCouple && normalizedEmail === 'host')) &&
+            g.accessCode === normalizedCode
+        );
+
+        if (secureMatch) {
             // Strip any highly sensitive fields if needed but for RSVP we need standard fields
-            res.json(match);
+            res.json(secureMatch);
         } else {
             res.status(404).json({ error: 'No invitation found with that email' });
         }
@@ -433,7 +438,8 @@ app.post('/api/send-invites', async (req, res) => {
                     firstName: firstName,
                     eventDate: eventDate,
                     venueName: venueName,
-                    rsvpLink: rsvpLink
+                    rsvpLink: rsvpLink,
+                    accessCode: guest.accessCode
                 };
 
                 await emailAPI.sendTransacEmail(message);
