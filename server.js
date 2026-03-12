@@ -58,6 +58,21 @@ const requireAdmin = async (req, res, next) => {
     }
 };
 
+// --- Auth Route ---
+app.post('/api/auth/verify', async (req, res) => {
+    try {
+        const { password } = req.body;
+        const config = await db.collection('sitedata').findOne({ _id: 'siteconfig' });
+        if (config && config.adminPassword && password === config.adminPassword) {
+            res.json({ success: true });
+        } else {
+            res.status(401).json({ error: 'Invalid password' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Authentication failed' });
+    }
+});
+
 // --- Site Data Routes ---
 app.get('/api/sitedata/rsvp', async (req, res) => {
     try {
@@ -95,7 +110,7 @@ app.get('/api/sitedata/guest', async (req, res) => {
     }
 });
 
-app.get('/api/sitedata', async (req, res) => {
+app.get('/api/sitedata', requireAdmin, async (req, res) => {
     try {
         const data = await db.collection('sitedata').findOne({ _id: 'siteconfig' });
         res.json(data);
@@ -104,7 +119,7 @@ app.get('/api/sitedata', async (req, res) => {
     }
 });
 
-app.put('/api/sitedata', async (req, res) => {
+app.put('/api/sitedata', requireAdmin, async (req, res) => {
     try {
         const update = req.body;
         delete update._id; // prevent _id mutation
