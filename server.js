@@ -357,67 +357,25 @@ app.post('/api/send-invites', async (req, res) => {
         const sent = [];
         const errors = [];
 
+        // Use BREVO_TEMPLATE_ID from env, or default to 1, since you only have one template
+        const activeTemplateId = process.env.BREVO_TEMPLATE_ID ? parseInt(process.env.BREVO_TEMPLATE_ID, 10) : 1;
+
         for (const guest of eligible) {
             const firstName = guest.name.split(' ')[0];
             const rsvpLink = `${rsvpBaseUrl}/rsvp`;
 
-            const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
-  body { font-family: 'Inter', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
-  .wrapper { max-width: 560px; margin: 40px auto; background: #0f172a; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 1px solid #1e293b; }
-  .header { padding: 48px 40px 24px; text-align: center; }
-  .header h1 { font-family: 'Playfair Display', Georgia, serif; color: #ffffff; font-size: 42px; margin: 0 0 12px; font-weight: 400; }
-  .header p { color: #94a3b8; font-size: 14px; margin: 0; text-transform: uppercase; letter-spacing: 3px; font-weight: 600; }
-  .body { padding: 0 40px 40px; color: #cbd5e1; line-height: 1.8; text-align: center; }
-  .body h2 { font-family: 'Inter', Arial, sans-serif; font-size: 20px; color: #ffffff; margin-top: 0; font-weight: 500; }
-  .detail { background: #1e293b; padding: 24px; border-radius: 16px; margin: 32px 0; border: 1px solid #334155; }
-  .detail p { margin: 8px 0; font-size: 15px; color: #e2e8f0; }
-  .detail strong { color: #ffffff; font-weight: 600; }
-  .btn { display: inline-block; margin: 8px auto 32px; background: #ffffff; color: #0f172a !important; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-size: 16px; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.3s; }
-  .footer { text-align: center; padding: 24px; color: #64748b; font-size: 13px; border-top: 1px solid #1e293b; background: #0b1120; }
-</style>
-</head>
-<body style="background-color: #f8fafc;">
-<div style="padding: 20px;">
-<div class="wrapper">
-  <div class="header">
-    <div style="text-align: center; margin-bottom: 12px;">
-      <img src="${rsvpBaseUrl}/Accent%204.png" alt="" style="height: 40px; vertical-align: middle; margin-right: 12px; object-fit: contain;" />
-      <h1 style="display: inline-block; vertical-align: middle; margin: 0;">${coupleName}</h1>
-      <img src="${rsvpBaseUrl}/Accent%204.png" alt="" style="height: 40px; vertical-align: middle; margin-left: 12px; object-fit: contain; transform: scaleX(-1);" />
-    </div>
-    <p>Wedding Invitation</p>
-  </div>
-  <div class="body">
-    <h2>Dear ${firstName},</h2>
-    <p>We are delighted to invite you to celebrate our wedding day with us. Your presence would mean the world to us.</p>
-    <div class="detail">
-      <p><strong>📅 Date:</strong> ${eventDate}</p>
-      <p><strong>📍 Venue:</strong> ${venueName}</p>
-    </div>
-    <p style="margin-bottom: 24px;">Please let us know if you'll be joining us by clicking the button below.</p>
-    <a class="btn" href="${rsvpLink}">RSVP Now</a>
-    <p style="font-size:13px;color:#64748b;">Or copy this link:<br> <a href="${rsvpLink}" style="color:#94a3b8; word-break: break-all;">${rsvpLink}</a></p>
-  </div>
-  <div class="footer">
-    <p style="margin: 0;">With love, ${coupleName} 💍</p>
-  </div>
-</div>
-</div>
-</body>
-</html>`;
-
             try {
                 const message = new Brevo.SendSmtpEmail();
-                message.subject = `You're invited to ${coupleName}'s Wedding! 💍`;
-                message.htmlContent = htmlContent;
-                message.sender = { name: senderName, email: senderEmail };
+                message.templateId = activeTemplateId;
                 message.to = [{ email: guest.contact, name: guest.name }];
+                message.params = {
+                    rsvpBaseUrl: rsvpBaseUrl,
+                    coupleName: coupleName,
+                    firstName: firstName,
+                    eventDate: eventDate,
+                    venueName: venueName,
+                    rsvpLink: rsvpLink
+                };
 
                 await emailAPI.sendTransacEmail(message);
                 console.log(`[INVITES] Sent to ${guest.name} <${guest.contact}>`);
