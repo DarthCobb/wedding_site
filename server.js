@@ -12,21 +12,26 @@ app.use(express.json());
 
 // --- Request Logger ---
 app.use((req, res, next) => {
-    // Log every API call by default (VERBOSE=false)
-    console.log(`[API CALL] ${req.method} ${req.path}`);
-
     if (process.env.VERBOSE === 'true') {
         const hasBody = req.method !== 'GET' && req.method !== 'DELETE';
         if (hasBody && req.body && Object.keys(req.body).length > 0) {
-            console.log('[PAYLOAD]', JSON.stringify(req.body, null, 2));
+            console.log(`[API CALL] ${req.method} ${req.path}\n\tPayload: ${JSON.stringify(req.body, null, 2)}`);
         }
-
-        const start = Date.now();
-        res.on('finish', () => {
-            const duration = Date.now() - start;
-            console.log(`[RESPONSE] ${req.method} ${req.path} - Status: ${res.statusCode} (${duration}ms)`);
-        });
     }
+    else {
+        console.log(`[API CALL] ${req.method} ${req.path}`);
+    }
+
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        if (process.env.VERBOSE === 'true') {
+            console.log(`[RESPONSE] ${req.method} ${req.path} - Status: ${res.statusCode} (${duration}ms)\n\tPayload: ${JSON.stringify(res.body, null, 2)}`)
+        }
+        else {
+            console.log(`[RESPONSE] ${req.method} ${req.path} - Status: ${res.statusCode} (${duration}ms)`);
+        }
+    });
     next();
 });
 
