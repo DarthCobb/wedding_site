@@ -118,7 +118,9 @@ app.get('/api/sitedata/guest', async (req, res) => {
                 aboutUs: data.aboutUs,
                 location: data.location,
                 eventDate: data.eventDate,
-                registryUrl: data.registryUrl
+                registryUrl: data.registryUrl,
+                accommodations: data.accommodations,
+                seatedTime: data.seatedTime
             });
         } else {
             res.json(null);
@@ -437,7 +439,7 @@ app.post('/api/send-invites', async (req, res) => {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         }) : 'our special day';
         const coupleName = siteData
-            ? `${siteData.person1.name} & ${siteData.person2.name}`
+            ? `${siteData.person2.name} & ${siteData.person1.name}`
             : senderName;
         const venueName = siteData?.location?.name || 'our venue';
 
@@ -462,8 +464,9 @@ app.post('/api/send-invites', async (req, res) => {
                     eventDate: eventDate,
                     venueName: venueName,
                     rsvpLink: rsvpLink,
-                    accessCode: guest.accessCode
+                    eventCode: guest.accessCode
                 };
+                console.log(message.params)
 
                 await emailAPI.sendTransacEmail(message);
                 if (process.env.VERBOSE === 'true') console.log(`[INVITES] Sent to ${guest.name} <${guest.contact}>`);
