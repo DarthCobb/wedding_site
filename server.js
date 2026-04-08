@@ -97,7 +97,8 @@ app.get('/api/sitedata/rsvp', async (req, res) => {
         if (data) {
             res.json({
                 person1: data.person1,
-                person2: data.person2
+                person2: data.person2,
+                rsvpDate: data.rsvpDate
             });
         } else {
             res.json(null);
@@ -120,7 +121,8 @@ app.get('/api/sitedata/guest', async (req, res) => {
                 eventDate: data.eventDate,
                 registryUrl: data.registryUrl,
                 accommodations: data.accommodations,
-                seatedTime: data.seatedTime
+                seatedTime: data.seatedTime,
+                rsvpDate: data.rsvpDate
             });
         } else {
             res.json(null);
@@ -464,7 +466,8 @@ app.post('/api/send-invites', async (req, res) => {
                     eventDate: eventDate,
                     venueName: venueName,
                     rsvpLink: rsvpLink,
-                    eventCode: guest.accessCode
+                    eventCode: guest.accessCode,
+                    rsvpDate: siteData?.rsvpDate
                 };
                 console.log(message.params)
 
