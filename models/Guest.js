@@ -9,7 +9,9 @@ const guestSchema = new mongoose.Schema({
     tableId: { type: String, default: null },
     seatIndex: { type: Number, default: null },
     songRequests: { type: [String], default: [] },
-    isCouple: { type: Boolean, default: false }
+    isCouple: { type: Boolean, default: false },
+    weddingPartyRole: { type: String, default: null },
+    duties: { type: [String], default: [] }
 });
 
 module.exports = mongoose.model('Guest', guestSchema);
