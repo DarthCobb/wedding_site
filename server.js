@@ -352,11 +352,26 @@ app.post('/api/tables', async (req, res) => {
 
 app.put('/api/tables/sync', async (req, res) => {
     try {
-        await db.collection('tables').deleteMany({});
         const newTables = req.body;
-        if (newTables.length > 0) {
-            await db.collection('tables').insertMany(newTables);
+        
+        const bulkOps = newTables.map(t => {
+            const { _id, ...updateData } = t;
+            return {
+                updateOne: {
+                    filter: { id: t.id },
+                    update: { $set: updateData },
+                    upsert: true
+                }
+            };
+        });
+
+        if (bulkOps.length > 0) {
+            await db.collection('tables').bulkWrite(bulkOps);
         }
+
+        const currentIds = newTables.map(t => t.id);
+        await db.collection('tables').deleteMany({ id: { $nin: currentIds } });
+        
         res.json(newTables);
     } catch (error) {
         console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
