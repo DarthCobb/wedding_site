@@ -122,7 +122,8 @@ app.get('/api/sitedata/guest', async (req, res) => {
                 registryUrl: data.registryUrl,
                 accommodations: data.accommodations,
                 seatedTime: data.seatedTime,
-                rsvpDate: data.rsvpDate
+                rsvpDate: data.rsvpDate,
+                dressCode: data.dressCode
             });
         } else {
             res.json(null);
@@ -353,7 +354,7 @@ app.post('/api/tables', async (req, res) => {
 app.put('/api/tables/sync', async (req, res) => {
     try {
         const newTables = req.body;
-        
+
         const bulkOps = newTables.map(t => {
             const { _id, ...updateData } = t;
             return {
@@ -371,7 +372,7 @@ app.put('/api/tables/sync', async (req, res) => {
 
         const currentIds = newTables.map(t => t.id);
         await db.collection('tables').deleteMany({ id: { $nin: currentIds } });
-        
+
         res.json(newTables);
     } catch (error) {
         console.error('[ERROR] Exception caught in API:', '\n', error.stack || error);
